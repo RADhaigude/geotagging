@@ -55,70 +55,78 @@
 
   <div id="location-info" class="info">Checking your location...</div>
 
-  <script>
-    const allowedCities = [
-      'Gurgaon',
-      'Ahmedabad',
-      'New Delhi',
-      'Haveli'
-    ];
+<script>
+  const allowedCities = [
+    'Gurgaon',
+    'Ahmedabad',
+    'New Delhi',
+    'Haveli'
+  ];
 
-    function showMessage(type, city = '', country = '') {
-      document.getElementById('location-info').textContent = `Your location: ${city}, ${country}`;
-      if (type === 'allowed') {
-        document.getElementById('allowed').style.display = 'block';
-      } else {
-        document.getElementById('blocked').style.display = 'block';
-      }
+  function showMessage(type, city = '', country = '') {
+    document.getElementById('location-info').textContent = `Your location: ${city}, ${country}`;
+    if (type === 'allowed') {
+      document.getElementById('allowed').style.display = 'block';
+    } else {
+      document.getElementById('blocked').style.display = 'block';
     }
+  }
 
-    function checkCityAccess(city, countryCode) {
-      const cleanCity = city.trim();
-      const cleanCountry = countryCode.trim().toUpperCase();
-      if (allowedCities.includes(cleanCity) && cleanCountry === 'IN') {
-        showMessage('allowed', cleanCity, cleanCountry);
-      } else {
-        showMessage('blocked', cleanCity, cleanCountry);
-      }
+  function checkCityAccess(city, countryCode) {
+    const cleanCity = city.trim();
+    const cleanCountry = countryCode.trim().toUpperCase();
+    console.log(`Detected city: ${cleanCity}, country: ${cleanCountry}`);
+    if (allowedCities.includes(cleanCity) && cleanCountry === 'IN') {
+      showMessage('allowed', cleanCity, cleanCountry);
+    } else {
+      showMessage('blocked', cleanCity, cleanCountry);
     }
+  }
 
-    function reverseGeocode(lat, lon) {
-      const url = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`;
-      fetch(url)
-        .then(res => res.json())
-        .then(data => {
-          const city = data.city || data.locality || data.principalSubdivision || '';
-          const countryCode = data.countryCode || '';
-          checkCityAccess(city, countryCode);
-        })
-        .catch(err => {
-          console.error('Geocoding error:', err);
-          showMessage('blocked', 'Unknown', 'Unknown');
-        });
+  function reverseGeocode(lat, lon) {
+    const url = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`;
+    console.log('Fetching geolocation from:', url);
+    fetch(url)
+      .then(res => res.json())
+      .then(data => {
+        console.log('Geocode response:', data);
+        const city = data.city || data.locality || data.principalSubdivision || '';
+        const countryCode = data.countryCode || '';
+        checkCityAccess(city, countryCode);
+      })
+      .catch(err => {
+        console.error('Geocoding error:', err);
+        showMessage('blocked', 'Unknown', 'Unknown');
+      });
+  }
+
+  function requestLocation() {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        position => {
+          console.log('Got position:', position.coords);
+          const { latitude, longitude } = position.coords;
+          reverseGeocode(latitude, longitude);
+        },
+        error => {
+          console.warn('Location access denied:', error);
+          document.getElementById('location-info').textContent = 'Location permission denied.';
+          document.getElementById('blocked').style.display = 'block';
+        }
+      );
+    } else {
+      document.getElementById('location-info').textContent = 'Geolocation not supported.';
+      document.getElementById('blocked').style.display = 'block';
     }
+  }
 
-    function requestLocation() {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          position => {
-            const { latitude, longitude } = position.coords;
-            reverseGeocode(latitude, longitude);
-          },
-          error => {
-            console.warn('Location access denied:', error);
-            document.getElementById('location-info').textContent = 'Location permission denied.';
-            document.getElementById('blocked').style.display = 'block';
-          }
-        );
-      } else {
-        document.getElementById('location-info').textContent = 'Geolocation not supported.';
-        document.getElementById('blocked').style.display = 'block';
-      }
-    }
+  // Start
+  requestLocation();
+</script>
 
-    // Start
-    requestLocation();
-  </script>
+
+   
+ 
 
 </body>
 </html>
